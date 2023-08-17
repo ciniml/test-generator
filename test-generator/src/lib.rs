@@ -124,6 +124,7 @@ use proc_macro::TokenStream;
 
 use self::glob::{glob, Paths};
 use quote::quote;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::{parse_macro_input, Expr, ExprLit, Ident, Lit, Token, ItemFn};
@@ -244,6 +245,7 @@ pub fn test_resources(attrs: TokenStream, func: TokenStream) -> TokenStream {
     let func_ident = func_ast.ident;
 
     let paths: Paths = glob(&pattern).expect(&format!("No such file or directory {}", &pattern));
+    let mut test_names = HashSet::new();
 
     // for each path generate a test-function and fold them to single tokenstream
     let result = paths
@@ -256,7 +258,11 @@ pub fn test_resources(attrs: TokenStream, func: TokenStream) -> TokenStream {
             let test_name = format!("{}_{}", func_ident.to_string(), &path_as_str);
 
             // create function name without any delimiter or special character
-            let test_name = canonical_fn_name(&test_name);
+            let mut test_name = canonical_fn_name(&test_name);
+            while test_names.contains(&test_name) {
+                test_name.push('_');
+            }
+            test_names.insert(test_name.clone());
 
             // quote! requires proc_macro2 elements
             let test_ident = proc_macro2::Ident::new(&test_name, proc_macro2::Span::call_site());
