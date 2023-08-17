@@ -244,7 +244,8 @@ pub fn test_resources(attrs: TokenStream, func: TokenStream) -> TokenStream {
 
     let func_ident = func_ast.ident;
 
-    let paths: Paths = glob(&pattern).expect(&format!("No such file or directory {}", &pattern));
+    let expanded_pattern = shellexpand::env(&pattern).unwrap();
+    let paths: Paths = glob(&expanded_pattern).expect(&format!("No such file or directory {}", &expanded_pattern));
     let mut test_names = HashSet::new();
 
     // for each path generate a test-function and fold them to single tokenstream
